@@ -1,6 +1,12 @@
 package com.security.SecurityTest;
 
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -28,4 +34,5 @@ public class SecureUser {
     private String password;
     private String role;
     private Date createdAt;
+
 }

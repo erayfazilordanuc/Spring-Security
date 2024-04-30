@@ -50,7 +50,7 @@ public class AccountController {
     public ResponseEntity<Object> profile(Authentication auth) {
         var response = new HashMap<String, Object>();
         response.put("Username", auth.getName());
-        response.put("Authorities", auth.getAuthorities());
+        response.put("Authorities", userRepo.findByUsername(auth.getName()).getRole());
 
         var user = userRepo.findByUsername(auth.getName());
         response.put("User", user);
@@ -61,13 +61,11 @@ public class AccountController {
     @GetMapping("/secure")
     public ResponseEntity<Object> secure(Authentication auth){
 
-        var response = new HashMap<String, Object>();
+        if(userRepo.findByUsername(auth.getName()).getRole().equals("ADMIN")){
+            return ResponseEntity.ok("So badly secure");
+        }
 
-        response.put("Authorities", auth.getAuthorities());
-
-        System.out.println(auth.getAuthorities());
-
-        return ResponseEntity.ok("So badly secure");
+        return ResponseEntity.badRequest().body("Really bad secure");
     }
 
     @PostMapping("/register")
@@ -106,7 +104,7 @@ public class AccountController {
             if(otherUser != null) {
                 return ResponseEntity.badRequest().body("Email already used");
             }
-            // username ve email hiç kullanılmamışsa aşağıda kaydet
+            // username ve email hiç kullanılmamışsa -> aşağıda kaydet
             userRepo.save(user);
 
             String jwtToken = createJwtToken(user);
@@ -136,7 +134,7 @@ public class AccountController {
                 errorsMap.put(error.getField(), error.getDefaultMessage());
             }
 
-            return ResponseEntity.badRequest().body(errorsMap); // alınan hataları alan isimleri ile mesaj olacak şekilde mapleyerek döndürür
+            return ResponseEntity.badRequest().body(errorsMap);
         }
 
         try {
@@ -160,7 +158,7 @@ public class AccountController {
         return ResponseEntity.badRequest().body("Username and password doesn't match");
     }
 
-    private String createJwtToken(SecureUser user) { // buraya bean koymadık bak sıkıntı çıkmasın
+    private String createJwtToken(SecureUser user) {
 
         Instant now = Instant.now();
 
@@ -169,7 +167,7 @@ public class AccountController {
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(24*3600))
                 .subject(user.getUsername())
-                .claim("role", user.getRole()) // claim'i istediğim şekilde böyle configure edebiliyoruz yani düzenleyebiliyoruz.
+                .claim("role", user.getRole()) // claim'i istediğimiz şekilde böyle configure edebiliyoruz yani düzenleyebiliyoruz.
                 .build();
 
         var encoder = new NimbusJwtEncoder(new ImmutableSecret<>(jwtSecretKey.getBytes()));
